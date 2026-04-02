@@ -4,7 +4,7 @@
 ---
 
 ## Team Members
-
+---
 | Lauris Li | Xiangchen Liu | Eric Zhang | Brandon Feng |
 ---
 
