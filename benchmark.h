@@ -7,26 +7,20 @@
 #include <iostream>
 #include <iomanip>
 
-// ─────────────────────────────────────────────────────────────
-// Benchmarking framework
-// ─────────────────────────────────────────────────────────────
-
 struct BenchResult {
     std::string name;
-    double mean_ms;     // mean execution time in milliseconds
-    double stddev_ms;   // sample standard deviation
+    double mean_ms;
+    double stddev_ms;
     int    runs;
 };
 
-/// Run `fn` `warmup` times (discarded) then `runs` times and return statistics.
-inline BenchResult benchmark(const std::string& name,
-                             std::function<void()> fn,
-                             int runs = 10,
-                             int warmup = 3) {
-    // warm-up
+/// run `fn` `warmup` times (discarded) then `runs` times and return statistics.
+///use inline to avoid the function call overhead, need to implement the function in the header file
+inline BenchResult benchmark(const std::string& name, std::function<void()> fn, int runs = 10, int warmup = 3) {
+    // warm-up, to avoid the first run being slower than the rest due to caching effects
     for (int i = 0; i < warmup; ++i) fn();
 
-    std::vector<double> times(runs);
+    std::vector<double> times(runs); // store the execution times
     for (int i = 0; i < runs; ++i) {
         auto t0 = std::chrono::high_resolution_clock::now();
         fn();
@@ -45,7 +39,7 @@ inline BenchResult benchmark(const std::string& name,
     return {name, mean, stddev, runs};
 }
 
-/// Print a formatted table row for a BenchResult.
+/// print a formatted table row for a BenchResult.
 inline void print_result(const BenchResult& r) {
     std::cout << std::left  << std::setw(40) << r.name
               << std::right << std::setw(10) << std::fixed << std::setprecision(3)
@@ -54,7 +48,7 @@ inline void print_result(const BenchResult& r) {
               << r.stddev_ms << " ms  (n=" << r.runs << ")\n";
 }
 
-/// Print table header.
+/// print table header
 inline void print_header() {
     std::cout << std::left  << std::setw(40) << "Kernel"
               << std::right << std::setw(10) << "Mean"

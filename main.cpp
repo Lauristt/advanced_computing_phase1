@@ -1,9 +1,5 @@
 /*
  * main.cpp
- * ========
- * High-Performance Linear Algebra Kernels
- * MSFM – Advanced Computing, Phase 1
- *
  * This file contains:
  *   1. Correctness tests for all baseline kernels.
  *   2. A full benchmark suite (small / medium / large matrices).
@@ -24,9 +20,7 @@
 #include <random>
 #include <memory>
 
-// ─────────────────────────────────────────────────────────────
-// Utility: fill array with uniform random doubles in [lo, hi]
-// ─────────────────────────────────────────────────────────────
+
 static void fill_random(double* arr, int n,
                         double lo = -1.0, double hi = 1.0,
                         unsigned seed = 42) {
@@ -35,9 +29,7 @@ static void fill_random(double* arr, int n,
     for (int i = 0; i < n; ++i) arr[i] = dist(rng);
 }
 
-// ─────────────────────────────────────────────────────────────
-// Utility: max absolute error between two arrays
-// ─────────────────────────────────────────────────────────────
+// max absolute error between two arrays
 static double max_abs_err(const double* a, const double* b, int n) {
     double err = 0.0;
     for (int i = 0; i < n; ++i)
@@ -45,9 +37,7 @@ static double max_abs_err(const double* a, const double* b, int n) {
     return err;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Reference implementations (simple, definitely correct)
-// ─────────────────────────────────────────────────────────────
+// reference implementations (simple, definitely correct)
 static void ref_mv(const double* A, int rows, int cols,
                    const double* x, double* y) {
     for (int i = 0; i < rows; ++i) {
@@ -67,9 +57,7 @@ static void ref_mm(const double* A, int rA, int cA,
                 C[i*cB+k] += A[i*cA+j] * B[j*cB+k];
 }
 
-// ─────────────────────────────────────────────────────────────
-// Transpose B helper
-// ─────────────────────────────────────────────────────────────
+// transpose B helper
 static void transpose(const double* B, int rows, int cols, double* Bt) {
     // Bt[k*rows + j] = B[j*cols + k]
     for (int j = 0; j < rows; ++j)
@@ -77,7 +65,7 @@ static void transpose(const double* B, int rows, int cols, double* Bt) {
             Bt[k * rows + j] = B[j * cols + k];
 }
 
-// Convert row-major A (rows×cols) to column-major (same logical matrix)
+//convert row-major A (rows×cols) to column-major (same logical matrix)
 static void to_col_major(const double* A_rm, int rows, int cols, double* A_cm) {
     // A_cm[j*rows + i] = A_rm[i*cols + j]
     for (int i = 0; i < rows; ++i)
@@ -85,10 +73,7 @@ static void to_col_major(const double* A_rm, int rows, int cols, double* A_cm) {
             A_cm[j*rows+i] = A_rm[i*cols+j];
 }
 
-// ─────────────────────────────────────────────────────────────
-// SECTION 1 – Correctness tests
-// ─────────────────────────────────────────────────────────────
-
+// correctness tests
 static bool test_mv_row_major() {
     const int R = 5, C = 4;
     double A[R*C], x[C], y[R], ref[R];
@@ -178,17 +163,15 @@ static bool test_mm_reordered() {
     return ok;
 }
 
-// ─────────────────────────────────────────────────────────────
-// SECTION 2 – Benchmark suite
-// ─────────────────────────────────────────────────────────────
+// benchmark suite
 
 struct MatrixSize { int rows, cols; };
 
-// Run MV benchmarks for a given square size
+// run MV benchmarks for a given square size
 static void bench_mv(int N, int runs = 8) {
     std::string tag = "N=" + std::to_string(N);
 
-    // Allocate aligned buffers
+    // allocate aligned buffers
     double* A_rm = aligned_alloc_d((long long)N * N);
     double* A_cm = aligned_alloc_d((long long)N * N);
     double* x    = aligned_alloc_d(N);
@@ -211,7 +194,7 @@ static void bench_mv(int N, int runs = 8) {
     aligned_free_d(x); aligned_free_d(y);
 }
 
-// Run MM benchmarks for a given square size
+// run MM benchmarks for a given square size
 static void bench_mm(int N, int runs = 5) {
     std::string tag = "N=" + std::to_string(N);
     long long sz = (long long)N * N;
@@ -246,22 +229,20 @@ static void bench_mm(int N, int runs = 5) {
     aligned_free_d(Bt); aligned_free_d(C);
 }
 
-// ─────────────────────────────────────────────────────────────
-// SECTION 3 – Alignment comparison
-// ─────────────────────────────────────────────────────────────
+// alignment comparison
 
 static void bench_alignment(int N, int runs = 8) {
     long long sz = (long long)N * N;
 
-    // Unaligned: plain new
+    // unaligned: plain new
     double* A_u  = new double[sz + 1];   // +1 so we can offset by 1
     double* B_u  = new double[sz + 1];
     double* C_u  = new double[sz];
-    // Potentially misalign by 1 element (8 bytes) to break 64-byte alignment
+    // potentially misalign by 1 element (8 bytes) to break 64-byte alignment
     double* A_ua = A_u + 1;
     double* B_ua = B_u + 1;
 
-    // Aligned
+    // aligned
     double* A_a  = aligned_alloc_d(sz);
     double* B_a  = aligned_alloc_d(sz);
     double* C_a  = aligned_alloc_d(sz);
@@ -286,11 +267,9 @@ static void bench_alignment(int N, int runs = 8) {
     aligned_free_d(A_a); aligned_free_d(B_a); aligned_free_d(C_a);
 }
 
-// ─────────────────────────────────────────────────────────────
-// SECTION 4 – Cache stride experiment (MV)
-// ─────────────────────────────────────────────────────────────
+// cache stride experiment (MV)
 //
-// Access every `stride`-th element of a large vector to show
+// access every `stride`-th element of a large vector to show
 // the effect of stride on cache performance.
 
 static void bench_stride(int N, int runs = 8) {
@@ -300,13 +279,13 @@ static void bench_stride(int N, int runs = 8) {
     fill_random(A, N*N, -1, 1, 300);
     fill_random(x, N,   -1, 1, 301);
 
-    // Stride-1: normal row-major (baseline)
+    // stride-1: normal row-major (baseline)
     auto r1 = benchmark("mv_row_major stride-1 N=" + std::to_string(N),
         [&]{ multiply_mv_row_major(A, N, N, x, y); }, runs);
 
-    // Simulate stride-N access pattern: access only column 0 of each row
-    // (equivalent to a column-vector of a row-major matrix – stride N).
-    // We do this by calling col_major on a transposed version.
+    // simulate stride-N access pattern: access only column 0 of each row
+    // (equivalent to a column-vector of a row-major matrix - stride N).
+    // do this by calling col_major on a transposed version.
     double* A_cm = aligned_alloc_d((long long)N * N);
     to_col_major(A, N, N, A_cm);
     auto r2 = benchmark("mv_col_major stride-N N=" + std::to_string(N),
@@ -319,10 +298,6 @@ static void bench_stride(int N, int runs = 8) {
     aligned_free_d(A_cm);
 }
 
-// ─────────────────────────────────────────────────────────────
-// main
-// ─────────────────────────────────────────────────────────────
-
 int main() {
     std::cout << "\n";
     std::cout << "=================================================\n";
@@ -330,7 +305,7 @@ int main() {
     std::cout << "  MSFM – Advanced Computing, Phase 1\n";
     std::cout << "=================================================\n\n";
 
-    // ── 1. Correctness tests ─────────────────────────────────
+    // correctness tests
     std::cout << "──────────────────────────────────────────────\n";
     std::cout << "SECTION 1: Correctness Tests\n";
     std::cout << "──────────────────────────────────────────────\n";
@@ -343,7 +318,7 @@ int main() {
     all_ok &= test_mm_reordered();
     std::cout << "\n  " << (all_ok ? "All tests PASSED." : "Some tests FAILED!") << "\n\n";
 
-    // ── 2. MV benchmarks ────────────────────────────────────
+    // MV benchmarks
     std::cout << "──────────────────────────────────────────────\n";
     std::cout << "SECTION 2a: Matrix-Vector Benchmarks\n";
     std::cout << "──────────────────────────────────────────────\n";
@@ -353,7 +328,7 @@ int main() {
     bench_mv(4096);   // large
     std::cout << "\n";
 
-    // ── 3. MM benchmarks ────────────────────────────────────
+    // MM benchmarks
     std::cout << "──────────────────────────────────────────────\n";
     std::cout << "SECTION 2b: Matrix-Matrix Benchmarks\n";
     std::cout << "──────────────────────────────────────────────\n";
@@ -363,7 +338,7 @@ int main() {
     bench_mm(512);   // large
     std::cout << "\n";
 
-    // ── 4. Alignment comparison ──────────────────────────────
+    // alignment comparison
     std::cout << "──────────────────────────────────────────────\n";
     std::cout << "SECTION 3: Alignment Comparison\n";
     std::cout << "──────────────────────────────────────────────\n";
@@ -372,7 +347,7 @@ int main() {
     bench_alignment(512);
     std::cout << "\n";
 
-    // ── 5. Stride / cache locality comparison ───────────────
+    // stride / cache locality comparison
     std::cout << "──────────────────────────────────────────────\n";
     std::cout << "SECTION 4: Cache Stride Experiment (MV)\n";
     std::cout << "──────────────────────────────────────────────\n";

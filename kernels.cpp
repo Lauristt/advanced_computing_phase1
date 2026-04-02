@@ -168,9 +168,7 @@ void multiply_mm_blocked(const double* A, int rowsA, int colsA,
     }
 }
 
-// ── Loop-reordered (i-k-j) matrix-matrix multiply ────────────
-//
-// Reorders loops to i-k-j (instead of naïve i-j-k) so that the
+// reorders loops to i-k-j (instead of naïve i-j-k) so that the
 // inner loop streams through a row of B sequentially while
 // accumulating into a row of C.  This avoids the irregular
 // access pattern of the naïve variant and reduces cache pressure.
