@@ -30,6 +30,7 @@ static inline void check_ptrs(const void* a, const void* b, const void* c) {
 }
 
 // row-major version of the matrix-vector multiplication
+//this assumes that the matrix is stored in row-major order
 void multiply_mv_row_major(const double* matrix, int rows, int cols,
                            const double* vector, double* result) {
     check_ptrs(matrix, vector, result);
@@ -47,6 +48,7 @@ void multiply_mv_row_major(const double* matrix, int rows, int cols,
 }
 
 // column-major version of the matrix-vector multiplication
+//this assumes that the matrix is stored in column-major order
 void multiply_mv_col_major(const double* matrix, int rows, int cols,
                            const double* vector, double* result) {
     check_ptrs(matrix, vector, result);

@@ -5,10 +5,7 @@
 
 ## Team Members
 
-| Member | Responsibility |
-|--------|---------------|
-| Lauris Li | All implementations (solo submission) |
-
+| Lauris Li | Xiangchen Liu | Eric Zhang | Brandon Feng |
 ---
 
 ## Build Instructions
