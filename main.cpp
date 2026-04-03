@@ -9,7 +9,6 @@
 
 #include "kernels.h"
 #include "benchmark.h"
-
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -20,7 +19,7 @@
 #include <random>
 #include <memory>
 
-
+// fill array with uniform random doubles in [lo, hi]
 static void fill_random(double* arr, int n,
                         double lo = -1.0, double hi = 1.0,
                         unsigned seed = 42) {
@@ -164,7 +163,6 @@ static bool test_mm_reordered() {
 }
 
 // benchmark suite
-
 struct MatrixSize { int rows, cols; };
 
 // run MV benchmarks for a given square size
@@ -198,12 +196,11 @@ static void bench_mv(int N, int runs = 8) {
 static void bench_mm(int N, int runs = 5) {
     std::string tag = "N=" + std::to_string(N);
     long long sz = (long long)N * N;
-
     double* A   = aligned_alloc_d(sz);
     double* B   = aligned_alloc_d(sz);
     double* Bt  = aligned_alloc_d(sz);
     double* C   = aligned_alloc_d(sz);
-
+    //fill the matrices with random values
     fill_random(A,  N*N, -1, 1, 100);
     fill_random(B,  N*N, -1, 1, 101);
     transpose(B, N, N, Bt);
@@ -299,16 +296,6 @@ static void bench_stride(int N, int runs = 8) {
 }
 
 int main() {
-    std::cout << "\n";
-    std::cout << "=================================================\n";
-    std::cout << "  High-Performance Linear Algebra Kernels\n";
-    std::cout << "  MSFM – Advanced Computing, Phase 1\n";
-    std::cout << "=================================================\n\n";
-
-    // correctness tests
-    std::cout << "──────────────────────────────────────────────\n";
-    std::cout << "SECTION 1: Correctness Tests\n";
-    std::cout << "──────────────────────────────────────────────\n";
     bool all_ok = true;
     all_ok &= test_mv_row_major();
     all_ok &= test_mv_col_major();
@@ -316,49 +303,29 @@ int main() {
     all_ok &= test_mm_transposed_b();
     all_ok &= test_mm_blocked();
     all_ok &= test_mm_reordered();
-    std::cout << "\n  " << (all_ok ? "All tests PASSED." : "Some tests FAILED!") << "\n\n";
+    std::cout << (all_ok ? "tests ok\n" : "tests failed\n");
 
-    // MV benchmarks
-    std::cout << "──────────────────────────────────────────────\n";
-    std::cout << "SECTION 2a: Matrix-Vector Benchmarks\n";
-    std::cout << "──────────────────────────────────────────────\n";
+    std::cout << "mv\n";
     print_header();
-    bench_mv(256);    // small
-    bench_mv(1024);   // medium
-    bench_mv(4096);   // large
-    std::cout << "\n";
+    bench_mv(256);
+    bench_mv(1024);
+    bench_mv(4096);
 
-    // MM benchmarks
-    std::cout << "──────────────────────────────────────────────\n";
-    std::cout << "SECTION 2b: Matrix-Matrix Benchmarks\n";
-    std::cout << "──────────────────────────────────────────────\n";
+    std::cout << "mm\n";
     print_header();
-    bench_mm(64);    // small
-    bench_mm(256);   // medium
-    bench_mm(512);   // large
-    std::cout << "\n";
+    bench_mm(64);
+    bench_mm(256);
+    bench_mm(512);
 
-    // alignment comparison
-    std::cout << "──────────────────────────────────────────────\n";
-    std::cout << "SECTION 3: Alignment Comparison\n";
-    std::cout << "──────────────────────────────────────────────\n";
+    std::cout << "alignment\n";
     print_header();
     bench_alignment(256);
     bench_alignment(512);
-    std::cout << "\n";
 
-    // stride / cache locality comparison
-    std::cout << "──────────────────────────────────────────────\n";
-    std::cout << "SECTION 4: Cache Stride Experiment (MV)\n";
-    std::cout << "──────────────────────────────────────────────\n";
+    std::cout << "stride (mv)\n";
     print_header();
     bench_stride(512);
     bench_stride(2048);
-    std::cout << "\n";
-
-    std::cout << "=================================================\n";
-    std::cout << "  Benchmarking complete.\n";
-    std::cout << "=================================================\n\n";
 
     return all_ok ? 0 : 1;
 }
